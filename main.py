@@ -41,6 +41,9 @@ def generatePizza(filename):
     print(show_matrix(pizza))
     return nb_rows, nb_cols, l, h, pizza
 
+
+nb_rows, nb_cols, l, h, pizza = generatePizza("example.in")
+
 def matrixTM(p):
     T = []
     M = []
@@ -80,7 +83,6 @@ def slices(p, low, high):
 def value_objects(o):
     L = []
     for x in o:
-        print(x)
         L.append((x[3]-x[1])*(x[2]-x[0]))
     return L
 
@@ -97,46 +99,49 @@ def nb_slices_takingPart(list_obj):
 
 def in_object(ctp, k, o):
     global nb_cols
-    W = 0
     j = ctp%nb_cols
     i = (ctp-j)//nb_cols
     a, b, c, d = o[k]
     if i>=b and i<=d and j>=a and j<=c:
-        W = 1
-    return W
-
-nb_rows, nb_cols, l, h, pizza = generatePizza("example.in")
+        return 1
+    return 0
 
 score = cvx.Variable()
 
 objects = slices(pizza, l, h)
-
-for i in range(len(objects)):
-    a,b,c,d = objects[i]
-    print(show_matrix(pizza[b:d, a:c]))
-    print("Tomates :", sum_elt(matrixTM(pizza[b:d, a:c])[0]))
-    print("Champis :", sum_elt(matrixTM(pizza[b:d, a:c])[1]))
-
 objects_val = value_objects(objects)
-print(objects)
-print("objet valeur : ",objects_val)
-pizza_covered = cvx.Variable(nb_rows*nb_cols, len(objects))
-pizza_covered_x = cvx.Variable(nb_rows*nb_cols)
-pizza_covered_y = cvx.Variable(len(objects))
+
+pizza_covered = cvx.Int(nb_rows*nb_cols, len(objects))
 
 objective = cvx.Maximize(score)
-constrains = [  score == pizza_covered_y.T * objects_val,
-                pizza_covered == np.array([[in_object(c, k, objects) for k in range(len(objects))] for c in range(nb_rows*nb_cols)]),
-                pizza_covered_x == sum(pizza_covered),
-                pizza_covered_y == sum(pizza_covered.T),
+
+constrains = [  score == sum(pizza_covered) * np.array(objects_val).T,
+                pizza_covered == np.array([[round(in_object(c, k, objects)) for k in range(len(objects))] for c in range(nb_rows*nb_cols)]),
+                sum(pizza_covered) == np.array(objects_val),
+                np.sum(pizza_covered, axis=-1) <= 1,
                 pizza_covered >= 0,
-                pizza_covered <= 1,
-                pizza_covered_y >= 0,
-                pizza_covered_x >= 0
+                pizza_covered <= 1
                 ]
 
 prob = cvx.Problem(objective, constrains)
 
-print("Solution : ", prob.solve())
-nb_slices = 0
-vect = pizza_covered_y.T
+print("Solution : ", round(prob.solve()))
+nb_Slices = 0
+vect_pizza = pizza_covered.value
+print("Pizza_covered sum")
+print(sum(vect_pizza))
+print("Pizza_covered sum T")
+print(sum(vect_pizza.T))
+print("#############")
+
+def objectKinSack(k,v):
+    S = 0
+    for i in range(nb_rows):
+        for j in range(nb_cols):
+            S += v[j+i*nb_cols, k]
+    return S
+
+for k in range(len(objects)):
+    if objectKinSack(k,vect_pizza) >= 1:
+        nb_Slices += 1
+print("Number of Slices : ", nb_Slices)
