@@ -102,11 +102,11 @@ def find_slices(n, m, l, h, p):
                 slice_i, slice_j = possible_cuts[0]
                 pizza_covered[coord_i:coord_i + slice_i, coord_j:coord_j + slice_j] = np.ones((slice_i, slice_j)) * idx
                 idx += 1
-                listOfSlices.append((coord_i, coord_j, coord_i+slice_i-1, coord_j+slice_j-1, ))
+                listOfSlices.append((coord_i, coord_j, coord_i+slice_i-1, coord_j+slice_j-1))
                 coord_j += slice_j - 1
 
         coord_i, coord_j = next_slice(n, m, coord_i, coord_j)
-        if coord_i == -1 or coord_j == -1:
+        if coord_i == -1 and coord_j == -1:
             return listOfSlices, pizza_covered
 
 def write_file(l, weight):
@@ -124,13 +124,46 @@ def show_pizzaMap(n, l):
         cover_file.write('\n')
     cover_file.close()
 
-weight = "medium"
-n, m, l, h, pizza_map = generatePizza(weight+".in")
+def cuttingTheBigPizza(n, m, p, r):
+    listMiniPizza = []
+    nb_rows = n
+    nb_cols = m
+    nr = n%r
+    mr = m%r
+    for i in range(0, n, r):
+        for j in range(0, m, r):
+            listMiniPizza.append(p[i:i+r, j:j+r])
+    return listMiniPizza
 
+
+weight = "small"
+r = 10
+n, m, l, h, pizza_map = generatePizza(weight+".in")
 #show_matrix(pizza_map)
-solution, mapOfPizza = find_slices(n, m, l, h, pizza_map)
+
+#Cutting the problem into subproblems with lower dimension
+if weight == "medium" or weight == "big":
+    listOfPizza = cuttingTheBigPizza(n, m, pizza_map, r)
+    print(len(listOfPizza))
+    listOfSol = []
+    listOfMaps = []
+    for k in range(len(listOfPizza)):
+        n_tmp, m_tmp = listOfPizza[k].shape
+        print("Rate to end : ", str(round(100.*float(k/len(listOfPizza)), 1)))
+        tmp1, tmp2 = find_slices(n_tmp, m_tmp, l, h, listOfPizza[k])
+        listOfSol += tmp1
+        listOfMaps += [tmp2]
+    S = 0
+    for k in range(len(listOfMaps)):
+        S += np.sum(listOfMaps[k]>0)
+    print(S)
+    write_file(listOfSol, weight)
+    #show_pizzaMap(n, mapOfPizza)
+
 # Best maximum parts of the pizza covered :
-print(np.sum(mapOfPizza > 0))
-# Writting the list of slices found :
-write_file(solution, weight)
-show_pizzaMap(n, mapOfPizza)
+if weight == "example" or weight == "small":
+    solution, mapOfPizza = find_slices(n, m, l, h, pizza_map)
+    print(np.sum(mapOfPizza > 0))
+    # Writting the list of slices found :
+    write_file(solution, weight)
+    show_pizzaMap(n, mapOfPizza)
