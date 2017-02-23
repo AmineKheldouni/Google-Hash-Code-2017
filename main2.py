@@ -137,7 +137,7 @@ def visualisation():
 
   fp.close()
 
-row_num, col_num, min_item, max_total, pizza_map = read_file('./', 'big.in')
+row_num, col_num, min_item, max_total, pizza_map = read_file('./', 'medium.in')
 rects_candidates = get_valid_rect()
 rects_validation_map = get_rect_validation_map()
 cover_map = np.zeros(pizza_map.shape, dtype=np.int)
