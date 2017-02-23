@@ -24,6 +24,9 @@ constrains = [ ]
 constrains.append(cvx.sum_entries(X.T*list_poids) <= weight)
 
 prob = cvx.Problem(objective, constrains)
+prob.solve()
+
+
 print("status: ", prob.status)
 print("Solution : ", prob.value)
 print(" X_i : ", X.value)

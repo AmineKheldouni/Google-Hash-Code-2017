@@ -2,7 +2,32 @@
 #encoding: utf8
 
 """
-#################### Hash Code Tranning ####################
+#################### Hash Code QualifRound ####################
+"""
+
+"""
+timeSaved = cvx.Variable(R)
+videoInCache = cvx.Variable(C, V)
+
+objective = cvx.Maximize(1000. * sum(timeSaved) / sum([request[j][2] for j in range(R)]))
+
+constrains = [ videoInCache >= 0, videoInCache <= 1]
+for c in range(C):
+  constrains.append(sum([videoInCache[c, v] * video_sizes[v] for v in range(V)]) <= X)
+
+for r in range(R):
+  constrains.append(timeSaved[r] >= 0)
+  tmp_request = [int(request[r][i]) for i in range(3)]
+  for c in range(C):
+    constrains.append(timeSaved[r]  >= (endpointLatency[tmp_request[1]] - endpointConnection[tmp_request[1], c]) * videoInCache[c, tmp_request[0]])
+
+
+
+
+
+prob = cvx.Problem(objective, constrains)
+prob.solve()
+print("Solution :", objective.value)
 """
 
 import numpy as np
@@ -61,56 +86,47 @@ def read_file(file_path, file_name):
   #print(request)
   return (V, E, R, C, X, video_sizes, endpointLatency, endpointConnection, request)
 
-def write_file(l, weight):
-    nbSlices = len(l)
-    f = open('output_'+weight+'.out', 'w')
-    f.write(str(nbSlices) + '\n')
-    for slc in l:
-        f.write(str(int(slc[0]))+' '+str(int(slc[1]))+' '+str(int(slc[2]))+' '+str(int(slc[3]))+'\n')
+def write_file(videoCache):
+    C = len(videoCache)
+    V = len(videoCache[0])
+    nb_cache = 0
+    for i in range(C):
+      if videoCache[i] != [0]*V:
+        nb_cache += 1
+    f = open('output.out', 'w')
+    f.write(str(nb_cache) + '\n')
+    for i in range(C):
+      f.write(str(i)+' ')
+      for j in range(V):
+        if int(videoCache[i, j]) == 1:
+          f.write(str(j)+' ')
+      f.write('\n')
     f.close()
 
 V, E, R, C, X, video_sizes, endpointLatency, endpointConnection, request = read_file("./", "me_at_the_zoo.in")
 
-"""
-timeSaved = cvx.Variable(R)
-videoInCache = cvx.Variable(C, V)
-
-objective = cvx.Maximize(1000. * sum(timeSaved) / sum([request[j][2] for j in range(R)]))
-
-constrains = [ videoInCache >= 0, videoInCache <= 1]
-for c in range(C):
-  constrains.append(sum([videoInCache[c, v] * video_sizes[v] for v in range(V)]) <= X)
-
-for r in range(R):
-  constrains.append(timeSaved[r] >= 0)
-  tmp_request = [int(request[r][i]) for i in range(3)]
-  for c in range(C):
-    constrains.append(timeSaved[r]  >= (endpointLatency[tmp_request[1]] - endpointConnection[tmp_request[1], c]) * videoInCache[c, tmp_request[0]])
-
-
-
-
-
-prob = cvx.Problem(objective, constrains)
-
-print("Solution :", objective.value)"""
-
 videoValue = cost_request(request,video_sizes, endpointLatency, endpointConnection)
-Vvalue = cvx.Parameter(V)
-Vvalue.value = videoValue[:][1]
 show_matrix(videoValue)
-weight = cvx.Parameter()
-weight.value = X
+weight = X
 videoTaken = cvx.Bool(V)
 print("video_size ", video_sizes)
 print("X : ", X)
-objective = cvx.Maximize(cvx.sum_entries(Vvalue*videoTaken))
+objective = cvx.Maximize(sum([videoValue[i][0]*videoTaken[i] for i in range(V)]))
 
 constrains = [ ]
 
 constrains.append(sum([video_sizes[i]*videoTaken[i] for i in range(V)]) <= weight)
 
 prob = cvx.Problem(objective, constrains)
-
+prob.solve()
 print("Solution :", objective.value)
-print(" X_i : ", videoTaken.value)
+
+videoTakenFinally = videoTaken.value
+for i in range(len(videoTakenFinally)):
+  if videoTakenFinally[i] > 0:
+    videoTakenFinally[i] = 1
+  else :
+    videoTakenFinally[i] = 0
+
+videoTakenFinally = videoTakenFinally.T
+print(videoTakenFinally)
