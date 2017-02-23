@@ -2,7 +2,6 @@
 #encoding: utf8
 
 """
-author : Mohammed Amine KHELDOUNI
 #################### Hash Code Tranning ####################
 """
 
@@ -11,7 +10,7 @@ import pickle
 import os
 import sys
 import cvxpy as cvx
-
+import math as m
 
 def show_matrix(M):
     mat = ""
@@ -25,12 +24,31 @@ def show_matrix(M):
 def read_file(file_path, file_name):
   fp = open(os.path.join(file_path, file_name) ,'r')
   fp_line = fp.read().split('\n')
-  row_num, col_num, min_item, max_total = [int(i) for i in fp_line[0].split(' ')]
-  pizza_map = np.zeros((row_num, col_num), dtype = np.int)
-  for i in range(row_num):
-    for j in range(col_num):
-      pizza_map[i][j] = 1 if fp_line[i+1][j] == 'T' else 0
-  return (row_num, col_num, min_item, max_total, pizza_map)
+  V, E, R, C, X = [int(i) for i in fp_line[0].split(' ')]
+  video_sizes = [int(i) for i in fp_line[1].split(' ')]
+  print("V : ", V)
+  print("E : ", E)
+  print("R : ", R)
+  print("C : ", C)
+  print("X : ", X)
+  print("Size of Videos : ", video_sizes)
+  endpointLatency = []
+  endpointConnection = np.zeros((E, C))
+  idLine = 2
+
+  for i in range(E):
+    for j in range(C):
+      endpointConnection[i, j] = m.inf
+
+  for i in range(E):
+    idLine += 1
+    endpointLatency[i] = fp_line[idLine]
+    for j in range(fp_line[idLine][1]):
+      idLine = idLine + 1
+      endpointConnection[i,fp_line[idLine][0]] = fp_line[idLine][1]
+  print("Connection EndPoint-Cache : ",endpointConnection)
+  print("Connexion EndPoint to Latency : ", endpointLatency)
+  return (V, E, R, C, X, endpointLatency, endpointConnection)
 
 def write_file(l, weight):
     nbSlices = len(l)
@@ -39,3 +57,6 @@ def write_file(l, weight):
     for slc in l:
         f.write(str(int(slc[0]))+' '+str(int(slc[1]))+' '+str(int(slc[2]))+' '+str(int(slc[3]))+'\n')
     f.close()
+
+
+read_file("./", "me_at_the_zoo.in")
